@@ -20,18 +20,18 @@
         var elements = this;
         var $container;
         var settings = {
-            threshold       : 0,
+            threshold       : 0,//正常图片出现再视口的时候才开始加载，该自断让元素再视口以外指定范围开始加载
             failure_limit   : 0,
-            event           : "scroll",
-            effect          : "show",
+            event           : "scroll",//window scroll 事件
+            effect          : "show", //jquery show方法
             container       : window,
             data_attribute  : "original",
             skip_invisible  : false,
-            appear          : null,
-            load            : null,
+            appear          : null,//每张图片开始加载的时候回调事件
+            load            : null,//每张图片加载结束后回调事件
             placeholder     : "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAANSURBVBhXYzh8+PB/AAffA0nNPuCLAAAAAElFTkSuQmCC"
         };
-
+        //window滚动事件触发 遍历所有图片元素 并触发位于视口中的的元素的appear方法来显示图片 设置图片的src
         function update() {
             var counter = 0;
 
@@ -81,7 +81,7 @@
                 return update();
             });
         }
-
+        //为每个图片元素注册appear事件
         this.each(function() {
             var self = this;
             var $self = $(self);
@@ -98,10 +98,12 @@
             /* When appear is triggered load original image. */
             $self.one("appear", function() {
                 if (!this.loaded) {
+                    //当前元素的appear事件被触发后回调 用户自定义的setting.appear方法
                     if (settings.appear) {
                         var elements_left = elements.length;
                         settings.appear.call(self, elements_left, settings);
                     }
+                    //生成一个临时dom 只有临时dom的图片加载成功后 才替换文档中的图片元素的src 
                     $("<img />")
                         .one("load", function() {
                             var original = $self.attr("data-" + settings.data_attribute);
@@ -111,16 +113,15 @@
                             } else {
                                 $self.css("background-image", "url('" + original + "')");
                             }
-                            $self[settings.effect](settings.effect_speed);
+                            $self[settings.effect](settings.effect_speed); //$self.show()
 
-                            self.loaded = true;
-
+                            self.loaded = true;//标志位 当前图片元素加载成功
                             /* Remove image from array so it is not looped next time. */
                             var temp = $.grep(elements, function(element) {
                                 return !element.loaded;
                             });
                             elements = $(temp);
-
+                            //图片元素加载成功后 触发用户自定义的setting.load事件
                             if (settings.load) {
                                 var elements_left = elements.length;
                                 settings.load.call(self, elements_left, settings);
@@ -168,10 +169,10 @@
 
     /* Convenience methods in jQuery namespace.           */
     /* Use as  $.belowthefold(element, {threshold : 100, container : window}) */
-
+    //判断图片元素的位置是否在视口的下方
     $.belowthefold = function(element, settings) {
         var fold;
-
+        //获取视口高度 和视口滚动头部的位置
         if (settings.container === undefined || settings.container === window) {
             fold = (window.innerHeight ? window.innerHeight : $window.height()) + $window.scrollTop();
         } else {
